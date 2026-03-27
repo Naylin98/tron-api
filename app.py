@@ -65,10 +65,9 @@ def loop():
 
                 dt = datetime.fromtimestamp(ts / 1000)
 
-                # only 54 second block
-                if dt.second == 54:
-                    seen.add(number)
-
+                # only near 54 second block (safe)
+if 50 <= dt.second <= 59:
+    seen.add(number)
                     digits_only = re.sub(r"\D", "", hsh)
                     last_digit = int(digits_only[-1]) if digits_only else 0
 
