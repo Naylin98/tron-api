@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TRON Live Blocks</title>
+</head>
+<body>
+<h1>TRON Live Blocks</h1>
+<ul id="list"></ul>
+
+<script>
+async function load() {
+    const res = await fetch("/api/live");
+    const data = await res.json();
+    const ul = document.getElementById("list");
+    ul.innerHTML = "";
+    data.forEach(d => {
+        const li = document.createElement("li");
+        li.textContent = `${d.IssueNumber} | ${d.time} | ${d.last_digit} | ${d.color}`;
+        ul.appendChild(li);
+    });
+}
+setInterval(load, 2000);
+load();
+</script>
+</body>
+</html>
