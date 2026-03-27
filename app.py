@@ -48,11 +48,14 @@ def get_BS(digit):
     else:
         return "B"
 
-# Background thread
+last_captured_block = None
+
 def loop():
+    global last_captured_block
+
     while True:
         try:
-            res = requests.get(BASE_URL, params={"limit": 10}, timeout=10)
+            res = requests.get(BASE_URL, params={"limit": 20}, timeout=10)
             data = res.json()
 
             for block in data.get("data", []):
@@ -63,39 +66,41 @@ def loop():
                 if number in seen:
                     continue
 
-                dt = datetime.fromtimestamp(ts / 1000)
+                # 🔥 First run
+                if last_captured_block is None:
+                    last_captured_block = number
 
-                # only near 54 second block (safe)
-if 50 <= dt.second <= 59:
-    seen.add(number)
+                # 🔥 Check ~54 sec interval (~18 blocks)
+                if number - last_captured_block >= 18:
+
+                    last_captured_block = number
+                    seen.add(number)
+
+                    dt = datetime.fromtimestamp(ts / 1000)
+
                     digits_only = re.sub(r"\D", "", hsh)
                     last_digit = int(digits_only[-1]) if digits_only else 0
 
                     row = {
-                        "issue": next_issue(),  # ✅ IssueNumber
+                        "issue": next_issue(),
                         "block": number,
                         "time": dt.strftime("%H:%M:%S"),
-                        "hash": hsh,
                         "last_digit": last_digit,
-                        "B/S" :get_BS(last_digit),
+                        "B/S": get_BS(last_digit),
                         "color": get_color(last_digit)
                     }
 
-                    # thread-safe insert
                     with lock:
                         results.insert(0, row)
-
                         if len(results) > MAX_RESULTS:
                             results.pop()
 
-                    # console output (row format)
-                    print(f"{row},")
+                    print("✅ CAPTURED:", row)
 
         except Exception as e:
             print("ERROR:", e)
 
         time.sleep(2)
-
 # Start thread
 threading.Thread(target=loop, daemon=True).start()
 
